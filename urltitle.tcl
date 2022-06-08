@@ -66,9 +66,9 @@ namespace eval UrlTitle {
 
   # PACKAGES
   package require http         ;# You need the http package..
-  variable httpsSupport false
-  variable htmlSupport false
-  variable tdomSupport false
+  variable httpsSupport true
+  variable htmlSupport true
+  variable tdomSupport true
   if {![catch {variable tlsVersion [package require tls]}]} {
     set httpsSupport true
     if {[package vcompare $tlsVersion 1.6.4] < 0} {
@@ -112,12 +112,17 @@ namespace eval UrlTitle {
       foreach word [split $text] {
         if {[string length $word] >= $length && [regexp {^(f|ht)tp(s|)://} $word] && \
             ![regexp {://([^/:]*:([^/]*@|\d+(/|$))|.*/\.)} $word] && \
-            ![urlisignored $word]} {
-          set last $unixtime
+            ![urlisignored $word]} {         
+		if {[regexp {://www\.youtube\.com} $word] || [regexp {://youtu\.be} $word]} {
+			regexp {^https://www\.youtube\.com/watch\?v=([0-9A-Za-z]+)} $word fullurl video_id 
+			set yt_video_id "$video_id"
+		}
+		set last $unixtime
           # enable https if supported
           if {$httpsSupport} {
             ::http::register https 443 [list UrlTitle::socket]
           }
+	  set yt_video_id ""
           set urtitle [UrlTitle::parse $word]
           if {$htmlSupport} {
             set urtitle [::htmlparse::mapEscapes $urtitle]
@@ -130,7 +135,16 @@ namespace eval UrlTitle {
             break
           }
           if {[string length $urtitle]} {
-            puthelp "PRIVMSG $chan :Title: $urtitle"
+		  set title_text "PRIVMSG $chan :Title: $urtitle $yt_video_id"
+		  if {$yt_video_id eq ""} {
+			  puthelp $title_text
+			  break
+		  }
+		  if {[string length $yt_video_id]} {
+		  	set youtube_text " (invidious.sethforprivacy.com/watch?v=$yt_video_id)"
+			set title_text [concat $title_text $youtube_text]
+		  }
+	  puthelp $title_text
           }
           break
         }
