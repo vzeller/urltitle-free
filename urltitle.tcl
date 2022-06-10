@@ -123,6 +123,9 @@ namespace eval UrlTitle {
 		if {[regexp {://www\.youtube\.com} $word] || [regexp {://youtu\.be} $word]} {
 			regexp {^https://www\.youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id 
 			regexp {^https://youtu\.be/([0-9A-Za-z_-]+)} $word fullurl video_id
+			if {[regexp {://youtu\.be} $word]} {
+				set word "https://www.youtube.com/watch?v=$video_id"
+			}
 			set yt_video_id "$video_id"
 		}
 		set last $unixtime
