@@ -122,8 +122,12 @@ namespace eval UrlTitle {
             ![urlisignored $word]} {         
 		if {[regexp {://www\.youtube\.com} $word] || [regexp {://youtu\.be} $word]} {
 			regexp {^https://www\.youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id 
-			regexp {^https://youtu\.be/([0-9A-Za-z_-]+)} $word fullurl video_id
-			if {[regexp {://youtu\.be} $word]} {
+			regexp {^https://youtu\.be/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id
+			if {[regexp {://youtu\.be/watch\?v=} $word]} {
+				regexp {^https://youtu\.be/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id
+				set word "https://www.youtube.com/watch?v=$video_id"
+			} elseif {[regexp {://youtu\.be} $word]} {
+				regexp {^https://youtu\.be/([0-9A-Za-z_-]+)} $word fullurl video_id
 				set word "https://www.youtube.com/watch?v=$video_id"
 			}
 			set yt_video_id "$video_id"
@@ -135,10 +139,6 @@ namespace eval UrlTitle {
           }
           set urtitle [UrlTitle::parse $word]
           if {$htmlSupport} {
-		  if {[regexp {://youtu\.be} $urtitle]} {
-			  regexp {^https://youtu\.be/([0-9A-Za-z_-]+)} $urtitle fullurl video_id
-  			  set urtitle "https://www.youtube.com/watch\?v=$video_id" 
-		  }
             set urtitle [::htmlparse::mapEscapes $urtitle]
           }
           # unregister https if supported
