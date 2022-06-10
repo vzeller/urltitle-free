@@ -53,6 +53,10 @@ namespace eval UrlTitle {
   set urlignore [list \
     #{://www\.youtube\.com} \
     #{://youtu\.be} \
+    {://matrix\.to} \
+    {://matrix\.org} \
+    {://www\.matrix\.to} \
+    {://www\.matrix\.org} \
   ]
 
   # BINDS
@@ -66,9 +70,9 @@ namespace eval UrlTitle {
 
   # PACKAGES
   package require http         ;# You need the http package..
-  variable httpsSupport false
-  variable htmlSupport false
-  variable tdomSupport false
+  variable httpsSupport true
+  variable htmlSupport true
+  variable tdomSupport true
   if {![catch {variable tlsVersion [package require tls]}]} {
     set httpsSupport true
     if {[package vcompare $tlsVersion 1.6.4] < 0} {
@@ -93,7 +97,7 @@ namespace eval UrlTitle {
       # tls version 1.7.11 should support autoservername
       ::tls::socket -autoservername true {*}$opts $host $port
     } elseif {[package vcompare $tlsVersion 1.6.4] >= 0} {
-      ::tls::socket -ssl3 false -ssl2 false -tls1 true -servername $host {*}$opts $host $port
+      ::tls::socket -ssl3 false -ssl2 false -tls1 true -tls1.1 true -tls1.2 true -tls1.3 true -servername $host {*}$opts $host $port
     } else {
       # default fallback without servername (SNI certs will not work)
       ::tls::socket -ssl3 false -ssl2 false -tls1 true {*}$opts $host $port
@@ -107,13 +111,26 @@ namespace eval UrlTitle {
     variable last
     variable ignore
     variable length
+    set yt_video_id ""
     set unixtime [clock seconds]
     if {[channel get $chan urltitle] && ($unixtime - $delay) > $last && (![matchattr $user $ignore])} {
       foreach word [split $text] {
         if {[string length $word] >= $length && [regexp {^(f|ht)tp(s|)://} $word] && \
             ![regexp {://([^/:]*:([^/]*@|\d+(/|$))|.*/\.)} $word] && \
-            ![urlisignored $word]} {
-          set last $unixtime
+            ![urlisignored $word]} {         
+		if {[regexp {://www\.youtube\.com} $word] || [regexp {://youtu\.be} $word]} {
+			regexp {^https://www\.youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id 
+			regexp {^https://youtu\.be/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id
+			if {[regexp {://youtu\.be/watch\?v=} $word]} {
+				regexp {^https://youtu\.be/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id
+				set word "https://www.youtube.com/watch?v=$video_id"
+			} elseif {[regexp {://youtu\.be} $word]} {
+				regexp {^https://youtu\.be/([0-9A-Za-z_-]+)} $word fullurl video_id
+				set word "https://www.youtube.com/watch?v=$video_id"
+			}
+			set yt_video_id "$video_id"
+		}
+		set last $unixtime
           # enable https if supported
           if {$httpsSupport} {
             ::http::register https 443 [list UrlTitle::socket]
@@ -130,7 +147,15 @@ namespace eval UrlTitle {
             break
           }
           if {[string length $urtitle]} {
-            puthelp "PRIVMSG $chan :Title: $urtitle"
+		  set title_text "PRIVMSG $chan :Title $urtitle"
+		  if {$yt_video_id eq ""} {
+			  puthelp $title_text
+			  break
+		  } else {
+		  	set youtube_text " https://invidious.sethforprivacy.com/watch?v=$yt_video_id"
+			set title_text [concat $title_text $youtube_text]
+		  }
+	  puthelp $title_text
           }
           break
         }
@@ -250,3 +275,4 @@ namespace eval UrlTitle {
 
   putlog "Initialized Url Title Grabber v$scriptVersion"
 }
+
