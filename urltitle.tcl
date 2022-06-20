@@ -59,6 +59,8 @@ namespace eval UrlTitle {
     {://matrix\.org} \
     {://www\.matrix\.to} \
     {://www\.matrix\.org} \
+    #{://www\.youtube\.com/channel/} \
+    #{://www\.youtube\.com/c/} \
   ]
 
   # BINDS
@@ -120,7 +122,9 @@ namespace eval UrlTitle {
         if {[string length $word] >= $length && [regexp {^(f|ht)tp(s|)://} $word] && \
             ![regexp {://([^/:]*:([^/]*@|\d+(/|$))|.*/\.)} $word] && \
             ![urlisignored $word]} {         
-		if {[regexp {://youtube\.com} $word] || [regexp {://www\.youtube\.com} $word] || [regexp {://youtu\.be} $word] || [regexp {://m\.youtu\.be} $word]} {
+            	if {[regexp {://youtube\.com/c} $word] || [regexp {://youtu\.be/c} $word] || [regexp {://m\.youtu\.be/c} $word]} {
+			regexp {^https://www.youtube.com/channel/([0-9A-Za-z_-]+)} $word fullurl video_id
+		} elseif {[regexp {://youtube\.com} $word] || [regexp {://www\.youtube\.com} $word] || [regexp {://youtu\.be} $word] || [regexp {://m\.youtu\.be} $word] || [regexp {://m\.youtube\.com} $word] } {
 			if {[regexp {://youtu\.be/watch\?v=} $word]} {
 				regexp {^https://youtu\.be/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id
 				set word "https://www.youtube.com/watch?v=$video_id"
@@ -133,12 +137,19 @@ namespace eval UrlTitle {
 			} elseif {[regexp {://m\.youtu\.be/} $word]} {
 				regexp {^https://m\.youtu\.be/([0-9A-Za-z_-]+)} $word fullurl video_id
 				set word "https://www.youtube.com/watch?v=$video_id"
-			} elseif {[regexp {^https://youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word]} {
+			} elseif {[regexp {://youtube\.com/watch\?v=} $word]} {
 				regexp {^https://youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id
 				set word "https://www.youtube.com/watch?v=$video_id"
-			}
+			} elseif {[regexp {://m\.youtube\.com/watch\?v=} $word]} {
+				regexp {^https://m\.youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id
+				set word "https://www.youtube.com/watch?v=$video_id"
+			} elseif {[regexp {://m\.youtube\.com/} $word]} {
+				regexp {^https://m\.youtube\.com/([0-9A-Za-z_-]+)} $word fullurl video_id
+				set word "https://www.youtube.com/watch?v=$video_id"
+			} elseif {[regexp {^https://www\.youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word]} {
 			regexp {^https://www\.youtube\.com/watch\?v=([0-9A-Za-z_-]+)} $word fullurl video_id 
 			set yt_video_id "$video_id"
+			}
 		}
 		set last $unixtime
           # enable https if supported
