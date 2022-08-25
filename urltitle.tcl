@@ -1,13 +1,11 @@
 # Script to grab titles from webpages
-# Updated version by vzeller Script to grab titles from webpages and add clickable invidious.io alternatives for YouTube Vids
 # Updated version by teel @ IRCnet
 #
-# https://github.com/vzeller/urltitle-free
+# https://github.com/teeli/urltitle
 #
 # Detects URL from IRC channels and prints out the title
 #
 # Version Log:
-# 0.13	   Added a function to provide invidious.io links for YouTube Videos, to enhance privacy
 # 0.12     Added a list of URL to ignore as regex (thanks to astrorigin on github for the pull request)
 # 0.11     Updated regex parser to only parse titles inside <head> tags
 #          Added HTTP error status logging
